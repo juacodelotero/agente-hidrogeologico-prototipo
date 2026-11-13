@@ -322,7 +322,7 @@
       if (!r0) { $('#adetail').innerHTML = ''; return; }
       const r = auditDetail(r0);
       const ok = r.resultado === 'Éxito';
-      const mail = r.usuario.replace('. ', '.').toLowerCase() + '@albemarle.com';
+      const mail = r.usuario.replace('. ', '.').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() + '@albemarle.com';
       $('#adetail').innerHTML = `<aside class="detail">
         <div class="detail-head"><span class="row1"><b>Detalle de interacción</b><span class="mono muted" style="font-size:11px">${r.id}</span><span style="margin-left:auto">${statusChip(r.resultado)}</span></span>
           <span style="line-height:1.45">${esc(r.peticion)}</span><span class="muted" style="font-size:11px">${esc(r.usuario)} · ${mail} · ${r.fecha}</span></div>
@@ -358,7 +358,7 @@
       const id = row.id || Screens.nextAuditId();
       auditSeq++;
       const fecha = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()} ${d.toTimeString().slice(0, 5)}`;
-      MOCK.AUDIT.unshift({ usuario: 'C. Rojas', fecha, kind: null, fresh: true, ...row, id });
+      MOCK.AUDIT.unshift({ usuario: 'F. Zúñiga', fecha, kind: null, fresh: true, ...row, id });
       aud.sel = id;
     }
   };

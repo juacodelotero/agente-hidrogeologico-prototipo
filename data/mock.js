@@ -263,7 +263,7 @@
       head: ['Pregunta', 'Verificada por', 'Fecha', 'Usos', 'Estado'], mono: [], edit: [],
       rows: [
         ['Pozos a menos de N km de un polígono con su sulfato promedio', 'M. Fuentes', '2026-10-02', '38', 'Vigente'],
-        ['Nivel mensual de un pozo vs. mismo período año anterior', 'C. Rojas', '2026-09-18', '61', 'Vigente'],
+        ['Nivel mensual de un pozo vs. mismo período año anterior', 'F. Zúñiga', '2026-09-18', '61', 'Vigente'],
         ['Última concentración de litio por pozo en un sector', 'M. Fuentes', '2026-08-27', '22', 'Vigente'],
         ['Pozos citados en un capítulo de informe con N registros', 'P. Soto', '2026-07-14', '11', 'Vigente'],
         ['Balance de extracción mensual por sector', 'J. Araya', '2026-06-10', '9', 'En revisión']
@@ -273,10 +273,10 @@
 
   // ---------- Auditoría inicial (del mockup) ----------
   const AUDIT = [
-    ['A-0412', 'C. Rojas', '11-11-2026 09:42', 'Pozos a < 2 km del polígono X con sulfato promedio', 2, 'Éxito', 14, '4,4 s', 'mapa'],
+    ['A-0412', 'F. Zúñiga', '11-11-2026 09:42', 'Pozos a < 2 km del polígono X con sulfato promedio', 2, 'Éxito', 14, '4,4 s', 'mapa'],
     ['A-0409', 'M. Fuentes', '11-11-2026 09:15', 'Litio promedio por sector, último trimestre', 1, 'Éxito', 3, '2,9 s', 'litio'],
     ['A-0401', 'J. Araya', '11-11-2026 08:57', 'Extracción mensual por pozo de bombeo 2026', 0, 'Error', 0, '6,1 s', null],
-    ['A-0398', 'C. Rojas', '10-11-2026 17:30', 'Nivel de PZ-101 vs. año anterior', 1, 'Éxito', 24, '3,2 s', 'nivel'],
+    ['A-0398', 'F. Zúñiga', '10-11-2026 17:30', 'Nivel de PZ-101 vs. año anterior', 1, 'Éxito', 24, '3,2 s', 'nivel'],
     ['A-0390', 'P. Soto', '10-11-2026 16:04', 'Informes que mencionan PZ-121', 4, 'Éxito', 4, '1,8 s', null],
     ['A-0384', 'M. Fuentes', '10-11-2026 12:22', 'Conductividad máxima 30 días, sector Sur', 0, 'Éxito', 9, '2,2 s', null],
     ['A-0377', 'P. Soto', '10-11-2026 10:48', 'Datos personales de operadores de turno', 0, 'Error', 0, '0,7 s', null],
