@@ -21,7 +21,8 @@
   const r2 = (v) => Math.round(v * 100) / 100;
 
   // ---------- Referencia espacial ----------
-  const CENTER = { lat: -23.555, lon: -68.335 };
+  // Centro desplazado al salar abierto, al este de las pozas de evaporación (sin pozos sobre las piscinas)
+  const CENTER = { lat: -23.546, lon: -68.2175 };
   const KM_LAT = 1 / 110.574;
   const KM_LON = 1 / (111.32 * Math.cos(CENTER.lat * Math.PI / 180));
   const toLatLon = (x, y) => [

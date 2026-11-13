@@ -66,7 +66,13 @@
       if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.12), { animate: true });
     };
     // Primer encuadre: el contenedor puede tener 0×0 hasta que se pinte
-    setTimeout(() => { map.invalidateSize(); fit(); }, 30);
+    let tries = 0;
+    const firstFit = () => {
+      map.invalidateSize();
+      if (map.getSize().x < 50 && tries++ < 40) { setTimeout(firstFit, 150); return; }
+      fit();
+    };
+    setTimeout(firstFit, 30);
 
     container.querySelector('.map-ctrl').addEventListener('click', (e) => {
       const z = e.target.closest('button')?.dataset.z; if (!z) return;
