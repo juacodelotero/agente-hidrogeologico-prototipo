@@ -281,6 +281,7 @@
     if (ex) return { ...r, ...ex, output: '—', docsList: [] };
     let base = null;
     if (r.kind === 'mapa' || r.kind === 'nivel') base = Q.bySuggestion(r.kind);
+    if (base) r = { ...r, ambig: base.ambig };
     const docsList = ['Informe Trimestral Hidroquímico Q3-2026', 'Plan de Alerta Temprana rev. 4', 'Campaña de niveles octubre 2026', 'Pruebas de bombeo PZ-107 y PZ-118'].slice(0, r.docs);
     return { ...r, sql: base ? base.sql : (EXTRA_SQL[r.id] || '-- SQL no disponible'), script: base ? base.script : 'from sandbox import result, publish\npublish.table(result.df)', output: base ? base.output : 'Tabla', docsList };
   }
@@ -327,6 +328,7 @@
           <span style="line-height:1.45">${esc(r.peticion)}</span><span class="muted" style="font-size:11px">${esc(r.usuario)} · ${mail} · ${r.fecha}</span></div>
         <div class="detail-stats"><div><span>Filas</span><b>${r.filas}</b></div><div><span>Tiempo</span><b>${r.tiempo}</b></div><div><span>Salida</span><b>${esc(r.output || '—')}</b></div></div>
         <div class="detail-sec"><span class="section-label">Documentos usados</span><span>${r.docsList && r.docsList.length ? esc(r.docsList.join(' · ')) : 'Ninguno'}</span></div>
+        ${r.ambig && r.ambig.length ? `<div class="detail-sec"><span class="section-label">Incertidumbres de interpretación</span>${r.ambig.map((a) => `<span class="aud-ambig"><span class="chip ${a.tipo === 'ambigua' ? 'chip-warn' : 'chip-rule'}">${a.tipo === 'ambigua' ? 'Ambigua' : 'Regla'}</span><span><b>${esc(a.term)}</b> → ${esc(a.aplicada)}${a.alternativa ? ` <span class="muted">(alternativa: ${esc(a.alternativa)})</span>` : ''}</span></span>`).join('')}</div>` : ''}
         ${r.err ? `<div class="err-box">${esc(r.err)}</div>` : ''}
         ${!ok && !r.err ? `<div class="err-box" style="background:#FDF3E1;color:#8A5A0B">La petición no coincidió con consultas habilitadas; no se ejecutó código.</div>` : ''}
         <div class="detail-sec" style="border-bottom:0">

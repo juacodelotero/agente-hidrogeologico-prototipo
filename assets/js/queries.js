@@ -42,11 +42,18 @@
     const over = rows.filter((r) => r.so4 > 4000);
     const min = Math.min(...rows.map((r) => r.so4)), max = Math.max(...rows.map((r) => r.so4));
     const inside = rows.filter((r) => r.dist === 0).length;
+    const P = MOCK.POLYGON_X.km, cx = avg(P.map((v) => v[0])), cy = avg(P.map((v) => v[1]));
+    const byCentroid = W.filter((w) => Math.hypot(w.xKm - cx, w.yKm - cy) <= 2).length;
     return {
       kind: 'mapa', output: 'Mapa', rows: rows.length, data: rows,
       question: 'Mostrar en un mapa los pozos a menos de 2 km del polígono X, con su promedio de sulfato del último año',
       short: 'Pozos a < 2 km del polígono X con sulfato promedio',
       docs: ['DOC-002', 'DOC-003'],
+      ambig: [
+        { term: '"último año"', tipo: 'regla', aplicada: '12 meses móviles hasta la última muestra (nov 2025 – oct 2026), según la métrica verificada so4_prom_12m.' },
+        { term: '"a menos de 2 km del polígono X"', tipo: 'ambigua', aplicada: `Distancia medida desde el borde del polígono, con distancia 0 para los puntos interiores: ${rows.length} puntos.`,
+          alternativa: `Medir desde el centroide del polígono: ${byCentroid} puntos.` }
+      ],
       steps: [
         ['Interpretando petición', 'Entidad: pozos · filtro espacial 2 km · métrica: sulfato promedio 12 m', 620,
           'Se identificó una consulta espacial (buffer de 2.000 m alrededor de "Polígono X"), la métrica verificada "Sulfato promedio" y la ventana temporal "último año" (nov 2025 – oct 2026). Salida esperada: mapa.'],
@@ -112,6 +119,10 @@ publish.map(
       question: `Evolución del nivel del agua del pozo ${code} en los últimos 12 meses vs. el año anterior`,
       short: `Nivel de ${code} vs. año anterior`,
       docs: ['DOC-003', 'DOC-004'],
+      ambig: [
+        { term: '"nivel del agua"', tipo: 'regla', aplicada: 'Profundidad al nivel freático en m b.s. (v_niveles.nivel_m_bs), promedio mensual si hay más de una medición.' },
+        { term: '"año anterior"', tipo: 'regla', aplicada: 'Mismos 12 meses del período previo (nov 2024 – oct 2025), según la métrica verificada delta_nivel_ia.' }
+      ],
       steps: [
         ['Interpretando petición', `Entidad: ${code} · métrica: nivel · comparación interanual`, 520,
           'Ventanas: nov 2025 – oct 2026 contra nov 2024 – oct 2025. Agregación mensual. Salida esperada: gráfico de líneas.'],
@@ -164,6 +175,9 @@ publish.line(df, x="mes_rel", y="nivel",
       question: `¿Cuál es la última concentración de litio en cada pozo del sector ${sector}?`,
       short: `Última concentración de litio, sector ${sector}`,
       docs: ['DOC-002'],
+      ambig: [
+        { term: '"última concentración"', tipo: 'regla', aplicada: 'Última muestra válida de cada pozo (métrica verificada li_ultimo), en mg/L.' }
+      ],
       steps: [
         ['Interpretando petición', `Entidad: pozos sector ${sector} · métrica: último valor de litio`, 480,
           `Filtro por atributo sector = '${sector}'. Se usa la métrica verificada li_ultimo (última muestra válida por punto). Salida esperada: tabla.`],
@@ -219,6 +233,9 @@ publish.table(df,
       question: `Ficha del pozo ${code}`,
       short: `Ficha del pozo ${code}`,
       docs: docs.map((d) => d.id),
+      ambig: [
+        { term: `"${code}"`, tipo: 'regla', aplicada: 'Coincidencia exacta con el código de v_puntos_monitoreo.' }
+      ],
       steps: [
         ['Interpretando petición', `Entidad: ${code} · vista 360`, 380,
           `Se reconoció el código de pozo ${code} y la intención "ficha". Salida esperada: ficha 360 (atributos, KPIs, serie histórica, condiciones y documentos).`],
@@ -271,6 +288,11 @@ publish.card(
       question: 'Pozos citados en el capítulo Topografía del informe N°1 con más de 10 registros',
       short: 'Pozos del cap. Topografía (informe N°1) con > 10 registros',
       docs: ['DOC-001'],
+      ambig: [
+        { term: '"informe N°1"', tipo: 'regla', aplicada: 'DOC-001 en el catálogo de documentos (único informe con esa numeración).' },
+        { term: '"más de 10 registros"', tipo: 'ambigua', aplicada: 'Total histórico de registros del pozo (niveles y química), sin filtro de fecha.',
+          alternativa: 'Contar solo los registros del período que cubre el informe.' }
+      ],
       steps: [
         ['Interpretando petición', 'Documento: informe N°1 · capítulo: Topografía · filtro: registros > 10', 560,
           'Se combinó una búsqueda documental (citas por capítulo) con un filtro cuantitativo sobre el número de registros de química por pozo. Salida esperada: mapa con referencia al documento.'],
@@ -312,16 +334,106 @@ publish.reference(cita, pages="${ch.p}",
     };
   }
 
+
+  // ======================================================================
+  // f) Tabla con ambigüedades: calcio promedio del "último año"
+  // ======================================================================
+  function buildCalcio(sector) {
+    const rows = W.filter((w) => w.sector === sector).map((w) => {
+      const q = w.quimica;
+      const m12 = Math.round(avg(q.map((s) => s.calcio)));
+      const cal = q.filter((s) => s.fecha.startsWith('2026'));
+      const y26 = Math.round(avg(cal.map((s) => s.calcio)));
+      return { w, last: q[q.length - 1].fecha, m12, y26, n12: q.length, n26: cal.length, diff: (y26 - m12) / m12 * 100 };
+    }).sort((a, b) => b.m12 - a.m12);
+    const mean12 = Math.round(avg(rows.map((r) => r.m12))), mean26 = Math.round(avg(rows.map((r) => r.y26)));
+    const hi = rows[0];
+    return {
+      kind: 'calcio', output: 'Tabla', rows: rows.length, sector, data: rows,
+      question: `¿Cuál es el promedio de calcio del último año en los pozos del sector ${sector}?`,
+      short: `Calcio promedio del último año, sector ${sector}`,
+      docs: ['DOC-002'],
+      ambig: [
+        { term: 'Unidad no indicada', tipo: 'ambigua', aplicada: 'mg/L, la unidad registrada en la capa semántica para v_quimica.calcio_mg_l.',
+          alternativa: 'meq/L (mg/L ÷ 20,04).' },
+        { term: '"último año"', tipo: 'ambigua', aplicada: '12 meses anteriores a la última muestra de cada pozo (nov 2025 – oct 2026, 12 muestras por pozo).',
+          alternativa: `Año calendario 2026 (ene – oct, 10 muestras por pozo): promedio del sector ${fmt(mean26)} mg/L en vez de ${fmt(mean12)} mg/L.` },
+        { term: '"pozos del sector"', tipo: 'regla', aplicada: `Todos los puntos con sector = '${sector}' en v_puntos_monitoreo (monitoreo, bombeo y piezómetros).` }
+      ],
+      steps: [
+        ['Interpretando petición', `Entidad: pozos sector ${sector} · métrica: calcio promedio · ventana: "último año"`, 520,
+          `Filtro por atributo sector = '${sector}'. La capa semántica tiene la métrica ca_prom, pero sin ventana de tiempo definida. Salida esperada: tabla.`],
+        ['Consultando capa semántica', '2 vistas · métrica sin ventana definida', 380,
+          'Vistas hidro.v_puntos_monitoreo y hidro.v_quimica (columna calcio_mg_l, unidad mg/L). No existe una consulta verificada para calcio, así que el agente elige una interpretación y la declara.'],
+        ['Revisando documentos', '1 informe relevante', 720,
+          'Informe Trimestral Hidroquímico Q3-2026, capítulo 3: el calcio se reporta en mg/L y con 12 meses móviles en las tablas de tendencia.'],
+        ['Ejecutando script', `${rows.length} filas · entorno aislado`, 1380,
+          'Ejecutado en el contenedor sbx-03. Se calcularon ambas ventanas para mostrar el efecto de la interpretación. El agente recibió solo el esquema del resultado y el conteo de filas.']
+      ],
+      sql: `-- Interpretación aplicada: 12 meses anteriores a la última muestra
+-- Alternativa declarada: año calendario 2026
+WITH ultima AS (
+  SELECT punto_id, MAX(fecha) AS f_max
+  FROM hidro.v_quimica
+  GROUP BY punto_id
+)
+SELECT p.codigo, p.tipo, u.f_max AS ultima_muestra,
+       AVG(CASE WHEN q.fecha > DATEADD(month, -12, u.f_max)
+                THEN q.calcio_mg_l END) AS ca_prom_12m,
+       AVG(CASE WHEN YEAR(q.fecha) = 2026
+                THEN q.calcio_mg_l END) AS ca_prom_2026,
+       COUNT(*) AS n_muestras
+FROM hidro.v_puntos_monitoreo p
+JOIN hidro.v_quimica q ON q.punto_id = p.id
+JOIN ultima u ON u.punto_id = p.id
+WHERE p.sector = '${sector}'
+GROUP BY p.codigo, p.tipo, u.f_max
+ORDER BY ca_prom_12m DESC;`,
+      script: `from sandbox import result, publish
+df = result.df
+df["dif_pct"] = (df.ca_prom_2026 - df.ca_prom_12m) \\
+                / df.ca_prom_12m * 100
+publish.table(df,
+  columns=["codigo","tipo","ultima_muestra",
+           "ca_prom_12m","ca_prom_2026","dif_pct"],
+  format={"ca_prom_12m": "{:,.0f}",
+          "ca_prom_2026": "{:,.0f}",
+          "dif_pct": "{:+.1f} %"},
+  bar="ca_prom_12m")
+publish.note(interpretacion="12m_ultima_muestra",
+             unidad="mg/L")`,
+      answer: `<p>Con la interpretación aplicada (12 meses hasta la última muestra, en mg/L), el calcio promedio de los <b>${rows.length} pozos del sector ${sector}</b> es <b>${fmt(mean12)} mg/L</b>. El valor más alto es el de <b>${hi.w.codigo}</b> (${fmt(hi.m12)} mg/L).</p>
+               <p>La pregunta tenía <b>dos ambigüedades</b>: no indicaba la unidad, y "último año" también puede leerse como año calendario. Con el año calendario 2026 el promedio sería ${fmt(mean26)} mg/L, porque quedan fuera las muestras de noviembre y diciembre de 2025. La tabla muestra ambas columnas. Si Hidrogeología define cuál usar, se registra como métrica verificada en la capa semántica y la ambigüedad deja de aparecer.</p>`,
+      resultTitle: `Calcio promedio del último año · sector ${sector}`,
+      resultMeta: `${rows.length} pozos · interpretación: 12 meses hasta la última muestra`,
+      csv: { head: ['codigo', 'tipo', 'ultima_muestra', 'ca_prom_12m_mg_l', 'ca_prom_2026_mg_l', 'dif_pct'], rows: rows.map((r) => [r.w.codigo, r.w.tipo, r.last, r.m12, r.y26, r.diff.toFixed(1)]) }
+    };
+  }
+
+  // ---------- Paso "Detectando ambigüedades" ----------
+  function finalize(r) {
+    if (!r || !r.ambig || r.ambigDone) return r;
+    const nA = r.ambig.filter((a) => a.tipo === 'ambigua').length, nR = r.ambig.length - nA;
+    const sum = [nA ? `${nA} ${nA === 1 ? 'ambigüedad' : 'ambigüedades'}` : 'Sin ambigüedades', nR ? `${nR} resuelta${nR === 1 ? '' : 's'} por regla de negocio` : ''].filter(Boolean).join(' · ');
+    const detail = r.ambig.map((a) => `${a.term}: ${a.aplicada}${a.alternativa ? ' Alternativa declarada: ' + a.alternativa : ''}`).join(' · ');
+    r.steps.splice(1, 0, ['Detectando ambigüedades', sum, 340 + nA * 160, detail]);
+    r.ambigDone = true;
+    return r;
+  }
+
   // ---------- Catálogo y emparejamiento ----------
   const SUGGESTIONS = [
     { kind: 'mapa', tag: 'Mapa', text: 'Mostrar en un mapa los pozos a menos de 2 km del polígono X, con su promedio de sulfato del último año' },
     { kind: 'nivel', tag: 'Gráfico', text: 'Evolución del nivel del agua del pozo PZ-101 en los últimos 12 meses vs. el año anterior' },
     { kind: 'litio', tag: 'Tabla', text: '¿Cuál es la última concentración de litio en cada pozo del sector Norte?' },
     { kind: 'ficha', tag: 'Ficha 360', text: 'Ficha del pozo PZ-118' },
-    { kind: 'topografia', tag: 'Mapa + documento', text: 'Pozos citados en el capítulo Topografía del informe N°1 con más de 10 registros' }
+    { kind: 'topografia', tag: 'Mapa + documento', text: 'Pozos citados en el capítulo Topografía del informe N°1 con más de 10 registros' },
+    { kind: 'calcio', tag: 'Tabla + ambigüedades', text: '¿Cuál es el promedio de calcio del último año en los pozos del sector Núcleo?' }
   ];
 
-  function interpret(text) {
+  function interpret(text) { return finalize(interpretRaw(text)); }
+
+  function interpretRaw(text) {
     const t = norm(text);
     const m = t.match(/pz\s*-?\s*(\d{3})/);
     const well = m && wellByCode('PZ-' + m[1]) ? 'PZ-' + m[1] : null;
@@ -332,13 +444,14 @@ publish.reference(cita, pages="${ch.p}",
     if (well && has('ficha', '360', 'detalle', 'resumen')) return buildFicha(well);
     if (has('topograf') || (has('informe', 'capitulo') && has('citad', 'registro', 'mencion'))) return buildTopografia();
     if (has('nivel', 'freatic', 'evolucion', 'interanual', 'profundidad')) return buildNivel(well || 'PZ-101');
+    if (has('calcio')) return buildCalcio(/\b(sur|norte|nucleo)\b/.test(t) ? sector : 'Núcleo');
     if (has('litio')) return buildLitio(sector);
     if (has('sulfato', 'poligono', 'mapa', '2 km', 'buffer', 'cerca')) return buildMapa();
     if (well) return buildFicha(well);
     return null;
   }
 
-  const bySuggestion = (kind) => ({ mapa: buildMapa, nivel: () => buildNivel('PZ-101'), litio: () => buildLitio('Norte'), ficha: () => buildFicha('PZ-118'), topografia: buildTopografia }[kind]());
+  const bySuggestion = (kind) => finalize({ mapa: buildMapa, nivel: () => buildNivel('PZ-101'), litio: () => buildLitio('Norte'), ficha: () => buildFicha('PZ-118'), topografia: buildTopografia, calcio: () => buildCalcio('Núcleo') }[kind]());
 
   window.Queries = { interpret, bySuggestion, SUGGESTIONS, docTitle, s1, wellStats };
 })();

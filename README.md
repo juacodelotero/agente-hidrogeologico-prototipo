@@ -9,11 +9,11 @@ No se conecta a ningún LLM ni API: todas las respuestas del agente son **simula
 
 | Pantalla | Qué se puede hacer |
 |---|---|
-| **Consulta** | Chat con historial y consultas guardadas. 5 consultas predefinidas (sugerencias e historial) y texto libre con reconocimiento por palabras clave. Pasos animados del agente, SQL y script Python por consulta, descarga CSV/GeoJSON/PNG. |
+| **Consulta** | Chat con historial y consultas guardadas. 6 consultas predefinidas (sugerencias e historial) y texto libre con reconocimiento por palabras clave. Pasos animados del agente (incluida la detección de ambigüedades), bloque «Interpretación aplicada», SQL y script Python por consulta, descarga CSV/GeoJSON/PNG. |
 | **Fichas de pozo** | Listado filtrable de 30 pozos y ficha 360 (mapa satelital, KPIs, serie histórica, condiciones e informes que lo citan). |
 | **Documentos** | Repositorio con buscador (título, contenido, capítulo o código de pozo) y panel de detalle. |
 | **Capa semántica** | Pestañas Vistas, Relaciones, Métricas y Consultas verificadas. Celdas editables (borrador local). |
-| **Auditoría** | Tabla con filtros y panel de detalle. Cada consulta ejecutada en el chat agrega una fila. |
+| **Auditoría** | Tabla con filtros y panel de detalle con las incertidumbres de interpretación. Cada consulta ejecutada en el chat agrega una fila. |
 
 ### Consultas que el agente "entiende"
 
@@ -22,6 +22,9 @@ No se conecta a ningún LLM ni API: todas las respuestas del agente son **simula
 3. *¿Cuál es la última concentración de litio en cada pozo del sector Norte?* → tabla y texto (también "sector Sur" o "Núcleo").
 4. *Ficha del pozo PZ-118* → abre la ficha 360 (también otros códigos).
 5. *Pozos citados en el capítulo Topografía del informe N°1 con más de 10 registros* → mapa y referencia al documento.
+6. *¿Cuál es el promedio de calcio del último año en los pozos del sector Núcleo?* → tabla con dos ambigüedades declaradas (unidad no indicada y "último año": 12 meses hasta la última muestra o año calendario), con ambas columnas.
+
+Cada respuesta muestra un bloque **Interpretación aplicada**: las ambigüedades que el agente detectó y la alternativa que no aplicó, y lo que resolvió con reglas de la capa semántica. Ese registro queda también en la auditoría.
 
 Si el texto no coincide, el agente muestra las consultas disponibles.
 

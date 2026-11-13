@@ -20,7 +20,8 @@
     { label: 'Nivel de PZ-101 vs. año anterior', meta: '10-11 17:30', kind: 'nivel' },
     { label: 'Última concentración de litio, sector Norte', meta: '10-11 15:12', kind: 'litio' },
     { label: 'Ficha del pozo PZ-118', meta: '10-11 11:03', kind: 'ficha' },
-    { label: 'Pozos del cap. Topografía (informe N°1) con > 10 registros', meta: '09-11 16:40', kind: 'topografia' }
+    { label: 'Pozos del cap. Topografía (informe N°1) con > 10 registros', meta: '09-11 16:40', kind: 'topografia' },
+    { label: 'Calcio promedio del último año, sector Núcleo', meta: '09-11 10:15', kind: 'calcio' }
   ].map((h) => ({ ...h, build: () => Q.bySuggestion(h.kind) }));
 
   const saved = [
@@ -124,6 +125,16 @@
     s.querySelector('.step-time').textContent = time;
   }
 
+  function ambigCard(list) {
+    const nA = list.filter((a) => a.tipo === 'ambigua').length;
+    return el(`<div class="card ambig">
+      <div class="ambig-head"><b>Interpretación aplicada</b><span class="muted">${nA ? `${nA} ${nA === 1 ? 'ambigüedad declarada' : 'ambigüedades declaradas'} · queda en el registro de auditoría` : 'Sin ambigüedades · resuelto con reglas de la capa semántica'}</span></div>
+      ${list.map((a) => `<div class="ambig-row">
+        <span class="chip ${a.tipo === 'ambigua' ? 'chip-warn' : 'chip-rule'}">${a.tipo === 'ambigua' ? 'Ambigua' : 'Regla de negocio'}</span>
+        <div><b>${esc(a.term)}</b> · ${esc(a.aplicada)}${a.alternativa ? `<span class="alt">Alternativa no aplicada: ${esc(a.alternativa)}</span>` : ''}</div>
+      </div>`).join('')}</div>`);
+  }
+
   async function runAgent(text, r, animate) {
     const block = el(`<div class="msg-agent"><div class="ia-badge">IA</div><div class="agent-body"><div class="card steps"></div></div></div>`);
     scroll.appendChild(block);
@@ -162,6 +173,7 @@
     const d = now();
     const totalS = Q.s1(total + 180);
     body.appendChild(el(`<div class="answer">${r.answer}</div>`));
+    if (r.ambig && r.ambig.length) body.appendChild(ambigCard(r.ambig));
     const card = el(`<div class="card result">
       <div class="result-head"><span class="title">${esc(r.resultTitle)}</span><span class="muted">${esc(r.resultMeta)}</span><span class="sandbox-badge"><span class="dot"></span>Datos procesados en entorno aislado</span></div>
       <div class="result-body"></div>
@@ -182,7 +194,7 @@
     if (animate) toBottom(); else block.scrollIntoView({ block: 'start' });
 
     if (animate) {
-      Screens.addAudit({ id: auditId, peticion: text, docs: r.docs.length, resultado: 'Éxito', filas: r.rows, tiempo: totalS, output: r.output, sql: r.sql, script: r.script, docsList: r.docs.map(Q.docTitle) });
+      Screens.addAudit({ id: auditId, peticion: text, docs: r.docs.length, resultado: 'Éxito', filas: r.rows, tiempo: totalS, output: r.output, sql: r.sql, script: r.script, docsList: r.docs.map(Q.docTitle), ambig: r.ambig });
       history.unshift({ label: r.short, meta: 'Hoy ' + hhmm(d), kind: r.kind, build: () => r });
       renderSide('history');
       if (r.kind === 'ficha') {
@@ -380,6 +392,18 @@
           <td class="num"><span class="bar-cell"><i style="width:${Math.round(x.li / max * 90)}px"></i>${fmt(x.li)}</span></td>
           <td class="num ${x.delta >= 0 ? 'delta-up' : 'delta-down'}">${x.delta >= 0 ? '▲' : '▼'} ${fmt(Math.abs(x.delta), 1)} %</td>
           <td class="num">${x.ce}</td>
+          <td><a data-ficha="${x.w.codigo}">Ficha →</a></td></tr>`).join('')}</tbody></table></div>`;
+    },
+
+    calcio(box, r) {
+      const max = Math.max(...r.data.map((x) => x.m12));
+      box.innerHTML = `<div style="overflow:auto"><table class="res-table">
+        <thead><tr><th>Pozo</th><th>Tipo</th><th>Última muestra</th><th class="num">Ca prom. 12 m (mg/L)<br><span class="th-sub">aplicada</span></th><th class="num">Ca prom. 2026 (mg/L)<br><span class="th-sub">alternativa</span></th><th class="num">Diferencia</th><th></th></tr></thead>
+        <tbody>${r.data.map((x) => `<tr>
+          <td class="mono"><b>${x.w.codigo}</b></td><td>${x.w.tipo}</td><td class="mono">${U.fmtDate(x.last)}</td>
+          <td class="num"><span class="bar-cell"><i style="width:${Math.round(x.m12 / max * 90)}px"></i>${fmt(x.m12)}</span></td>
+          <td class="num muted">${fmt(x.y26)}</td>
+          <td class="num ${x.diff >= 0 ? 'delta-up' : 'delta-down'}">${x.diff >= 0 ? '+' : '−'}${fmt(Math.abs(x.diff), 1)} %</td>
           <td><a data-ficha="${x.w.codigo}">Ficha →</a></td></tr>`).join('')}</tbody></table></div>`;
     },
 

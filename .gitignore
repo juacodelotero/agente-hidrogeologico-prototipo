@@ -2,3 +2,8 @@
 .DS_Store
 Thumbs.db
 _site/
+
+# Documentos comerciales confidenciales: no publicar
+*.docx
+*.pdf
+~$*

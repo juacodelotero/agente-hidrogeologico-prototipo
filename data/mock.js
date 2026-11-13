@@ -113,7 +113,9 @@
     const ces = seriesAround(ce, ce * 0.03, 12).map(Math.round);
     const quimica = MONTHS.slice(12).map((mo, i) => ({
       fecha: `${mo.key}-${String(8 + Math.floor(rand() * 18)).padStart(2, '0')}`,
-      sulfato: so4s[i], litio: lis[i], conductividad: ces[i]
+      sulfato: so4s[i], litio: lis[i], conductividad: ces[i],
+      // Calcio derivado del sulfato (sin consumir el generador aleatorio), con alza leve en 2026
+      calcio: Math.round(so4s[i] * (0.095 + (so4 % 7) / 250) * (0.85 + 0.03 * i))
     }));
 
     // Serie histórica larga (para la ficha 360): desde el año de habilitación
@@ -223,6 +225,7 @@
         ['v_puntos_monitoreo', 'geom', 'geometry', 'Ubicación del punto', 'Ubicación', 'UTM 19S', '—'],
         ['v_quimica', 'litio_mg_l', 'numeric', 'Concentración de litio disuelto', 'Litio', 'mg/L', '0 – 5.000'],
         ['v_quimica', 'sulfato_mg_l', 'numeric', 'Concentración de sulfato', 'Sulfato', 'mg/L', '0 – 40.000'],
+        ['v_quimica', 'calcio_mg_l', 'numeric', 'Concentración de calcio disuelto', 'Calcio', 'mg/L', '0 – 3.000'],
         ['v_quimica', 'conductividad', 'numeric', 'Conductividad eléctrica in situ', 'Conductividad', 'mS/cm', '0 – 300'],
         ['v_quimica', 'fecha', 'date', 'Fecha de toma de muestra', 'Fecha muestra', '—', '≥ 2010-01-01'],
         ['v_niveles', 'nivel_m_bs', 'numeric', 'Profundidad al nivel freático', 'Nivel', 'm b.s.', '0 – 80'],
@@ -249,6 +252,7 @@
         ['so4_prom_12m', 'AVG(v_quimica.sulfato_mg_l)', 'mg/L', '12 meses móviles', 'Sulfato promedio'],
         ['li_prom_12m', 'AVG(v_quimica.litio_mg_l)', 'mg/L', '12 meses móviles', 'Litio promedio'],
         ['li_ultimo', 'LAST_VALUE(v_quimica.litio_mg_l) OVER (PARTITION BY punto)', 'mg/L', 'Última muestra', 'Última concentración de litio'],
+        ['ca_prom', 'AVG(v_quimica.calcio_mg_l)', 'mg/L', 'Sin definir', 'Calcio promedio'],
         ['nivel_mensual', 'AVG(v_niveles.nivel_m_bs) GROUP BY mes', 'm b.s.', 'Mensual', 'Nivel del agua'],
         ['delta_nivel_ia', 'nivel_mensual(t) − nivel_mensual(t−12)', 'm', 'Interanual', 'Variación interanual'],
         ['ce_max_30d', 'MAX(v_quimica.conductividad)', 'mS/cm', '30 días', 'Conductividad máxima']
