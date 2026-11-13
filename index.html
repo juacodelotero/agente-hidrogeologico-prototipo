@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Agente de Datos Hidrogeológicos · Prototipo</title>
+  <meta name="description" content="Prototipo visual navegable con datos ficticios.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230A2240'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%2300A3AD' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<div class="app">
+  <nav class="nav" id="nav">
+    <div class="nav-brand">
+      <div class="brand-row"><span class="brand-ring"></span><span class="brand-name">ALBEMARLE</span></div>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <span class="brand-title">Agente de Datos Hidrogeológicos</span>
+        <span class="brand-sub">Gerencia de Hidrogeología · Salar de Atacama</span>
+      </div>
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#/consulta" data-screen="consulta">Consulta</a>
+      <a class="nav-item" href="#/fichas" data-screen="fichas">Fichas de pozo</a>
+      <a class="nav-item" href="#/documentos" data-screen="documentos">Documentos</a>
+      <a class="nav-item" href="#/semantica" data-screen="semantica">Capa semántica</a>
+      <a class="nav-item" href="#/auditoria" data-screen="auditoria">Auditoría</a>
+    </div>
+    <div class="nav-foot">
+      <span class="live"><span class="dot pulse"></span>Entorno aislado operativo</span>
+      <span>El agente accede solo a metadatos</span>
+    </div>
+  </nav>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Abrir menú">☰</button>
+      <div class="topbar-title"><b id="pageTitle">Consulta</b><span id="pageSub">Agente conversacional</span></div>
+      <div class="topbar-right">
+        <div class="ms-pill"><span class="ms-logo"><i style="background:#F25022"></i><i style="background:#7FBA00"></i><i style="background:#00A4EF"></i><i style="background:#FFB900"></i></span>Sesión corporativa Microsoft</div>
+        <div class="user"><b>Camila Rojas Vergara</b><span>c.rojas@albemarle.com · Hidrogeóloga senior</span></div>
+        <div class="avatar">CR</div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- CONSULTA -->
+      <div class="screen" id="screen-consulta">
+        <aside class="side" id="side">
+          <button class="btn btn-primary" id="newQuery">+ Nueva consulta</button>
+          <div class="side-group"><span class="section-label">Guardadas</span><div id="savedList"></div></div>
+          <div class="side-group"><span class="section-label">Historial</span><div id="historyList"></div></div>
+        </aside>
+        <section class="chat">
+          <div class="chat-scroll" id="chatScroll"></div>
+          <div class="composer-wrap">
+            <form class="composer" id="composer" autocomplete="off">
+              <button type="button" class="btn hist-toggle" id="histToggle" title="Historial">☰</button>
+              <input id="prompt" type="text" placeholder="Pregunta sobre pozos, niveles, química o informes…" aria-label="Escribe tu consulta">
+              <span class="ver">Capa semántica v3.2</span>
+              <button class="btn btn-teal" id="sendBtn" type="submit">Enviar</button>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <!-- FICHAS -->
+      <div class="screen hidden" id="screen-fichas"></div>
+      <!-- DOCUMENTOS -->
+      <div class="screen hidden" id="screen-documentos"></div>
+      <!-- SEMÁNTICA -->
+      <div class="screen hidden" id="screen-semantica"></div>
+      <!-- AUDITORÍA -->
+      <div class="screen hidden" id="screen-auditoria"></div>
+    </main>
+    <div class="footer-note">Prototipo visual con datos ficticios · SilocyData</div>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="data/mock.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/maps.js"></script>
+<script src="assets/js/queries.js"></script>
+<script src="assets/js/consulta.js"></script>
+<script src="assets/js/screens.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
